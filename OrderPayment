@@ -1,0 +1,94 @@
+//SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract middleman{
+bool started_delivery = false;
+address website_owner ;
+
+
+uint product_cost = 10;
+uint tip;
+  constructor(address _address_of_seller) payable{
+      website_owner = _address_of_seller;
+  }
+
+
+   function getBalance() public view returns(uint){
+        return address(this).balance;
+
+    }
+  function start_delivery() public {
+      if(address(this).balance >= product_cost){
+         
+           started_delivery = true;
+           
+      }
+
+  }
+
+  function get_start_delivery() public view returns(bool){
+      return started_delivery;
+  }
+ 
+ 
+  function send_money_websiteowner(bool delivered) payable  public {
+      require(delivered == true, "Not yet delivered");
+      payable(website_owner).transfer(product_cost);
+  }
+
+  function to_check_websiteowner() public view returns(uint){
+      return website_owner.balance;
+  }
+
+  customerwallet public customer_return;
+
+
+//   function return_product( address _address_of_customer) public payable returns(bytes32 ){
+//      customer_return = customerwallet(_address_of_customer);
+//       payable(_address_of_customer).transfer(product_cost);
+//       return "returned product";
+//   }
+
+
+  function return_product() public payable returns(bytes32 ){
+     customer_return = customerwallet(msg.sender);
+      payable(msg.sender).transfer(product_cost);
+      return "returned product";
+  }
+
+
+  receive() external payable{}
+}
+
+
+
+
+
+
+contract customerwallet  {
+    //the customer wallet creates an object of the middleman 
+    middleman public receiver;
+    // the customer first sends some money into their wallet
+    uint currentbalance = msg.value;
+    //the customer deploys their wallet with their intended website owner to connect with
+    constructor(address payable _receiverAddress) payable{
+        receiver = middleman(_receiverAddress);
+   }
+  
+
+//when the customer calls this website with the amount to pay for the product, the amount is transacted to the middleman of that website selling this product
+function sendMoneytocontract(uint _x) external returns(bool){
+    //customer first checks if they have enough balance
+        require(_x < currentbalance, "Not enough funds to buy");
+        //send the product money to the middleman so that website owner will start delivery
+        (bool success,) = payable(receiver).call{value: _x}("");
+        return success;
+    }
+    function getBalance() public view returns(uint){
+        return address(this).balance;
+
+    }
+    
+    
+    
+}
